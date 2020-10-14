@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="UTF-8" />
-    <title>Hello World!</title>
+    <title>e-Commerce Order Dashboard</title>
     <link
       rel="stylesheet"
       href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
@@ -20,7 +20,21 @@
     ></script>
   </head>
   <body>
-    <div class="container">
+    <div class="container" id="app">
+      <div class="row">
+        <div class="col-md-12">
+          <div class="progress" v-if="loadingOrders">
+            <div
+              class="progress-bar progress-bar-striped progress-bar-animated"
+              role="progressbar"
+              aria-valuenow="100"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              style="width: 100%"
+            ></div>
+          </div>
+        </div>
+      </div>
       <div class="row">
         <div class="col-md-4">
           <!-- Orders Summary -->
@@ -29,36 +43,38 @@
               class="list-group-item d-flex justify-content-between align-items-center"
             >
               New
-              <span class="badge badge-primary badge-pill">14</span>
+              <span class="badge badge-primary badge-pill">{{newOrders}}</span>
             </li>
             <li
               class="list-group-item d-flex justify-content-between align-items-center"
             >
               Dispatched
-              <span class="badge badge-warning badge-pill">2</span>
+              <span class="badge badge-warning badge-pill">{{dispatched}}</span>
             </li>
             <li
               class="list-group-item d-flex justify-content-between align-items-center"
             >
               Delivered
-              <span class="badge badge-success badge-pill">1</span>
+              <span class="badge badge-success badge-pill">{{delivered}}</span>
             </li>
           </ul>
 
           <!-- Orders List -->
-          <div class="list-group mt-5">
-            <a href="#" class="list-group-item list-group-item-action active">
+          <div class="list-group mt-5" id="order-list">
+            <a
+              class="list-group-item list-group-item-action"
+              v-for="order in orders"
+              v-bind:class="{ 'active': selectedOrder.order_id == order.order_id}"
+              @click="selectOrder(order)"
+            >
               <div class="d-flex w-100 justify-content-between">
-                <h5 class="mb-1">Order #4235</h5>
+                <h5 class="mb-1">Order #{{order.order_id}}</h5>
                 <small>3 days ago</small>
               </div>
-              <p class="mb-1">
-                Donec id elit non mi porta gravida at eget metus. Maecenas sed
-                diam eget risus varius blandit.
-              </p>
-              <small>Donec id elit non mi porta.</small>
+              <p class="mb-1">{{order.item}}</p>
+              <small>Delivery Address: {{order.customer.address}}</small>
             </a>
-            <a href="#" class="list-group-item list-group-item-action">
+            <!-- <a href="#" class="list-group-item list-group-item-action">
               <div class="d-flex w-100 justify-content-between">
                 <h5 class="mb-1">Order #1284</h5>
                 <small class="text-muted">3 days ago</small>
@@ -79,29 +95,36 @@
                 diam eget risus varius blandit.
               </p>
               <small class="text-muted">Donec id elit non mi porta.</small>
-            </a>
+            </a> -->
           </div>
         </div>
         <div class="col-md-8">
           <div class="jumbotron mt-5">
-            <h1 class="display-4">Order #4235</h1>
-            <p class="lead">
-              This is a simple hero unit, a simple jumbotron-style component for
-              calling extra attention to featured content or information.
-            </p>
+            <h1 class="display-4">Order #{{selectedOrder.order_id}}</h1>
+            <p class="lead">{{selectedOrder.item}}</p>
             <hr class="my-2" />
-            <p>Current Status: <span class="text-primary">New</span></p>
+            <p>
+              Current Status:
+              <span class="text-primary">{{selectedOrder.status}}</span>
+            </p>
+          </div>
+
+          <div
+            class="alert"
+            :class="{'alert-danger' : alertType == 'danger', 'alert-success' : alertType == 'success'}"
+            role="alert"
+            v-if="showAlert"
+          >
+            {{alertMessage}}
           </div>
 
           <form class="mt-5">
             <div class="form-group">
               <div class="form-group">
-                <label for="exampleFormControlSelect1"
-                  >Update Order Status</label
-                >
-                <select class="form-control" id="exampleFormControlSelect1">
-                  <option>Dispatched</option>
-                  <option>Delivered</option>
+                <label for="orderStatusSelect">Update Order Status</label>
+                <select class="form-control" v-model="selectedUpdateStatus">
+                  <option value="Dispatched">Dispatched</option>
+                  <option value="Delivered">Delivered</option>
                 </select>
               </div>
 
@@ -110,7 +133,14 @@
               >
             </div>
 
-            <button type="submit" class="btn btn-primary">Submit</button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              :disabled="buttonDisabled"
+              @click="updateCustomerOrder()"
+            >
+              {{buttonDisabled? "Updating..." : "Submit"}}
+            </button>
           </form>
         </div>
       </div>
@@ -118,6 +148,99 @@
   </body>
 
   <script>
-    console.log(Vue);
+    const api_url = "http://localhost:5000";
+    var app = new Vue({
+      el: "#app",
+      data: {
+        loadingOrders: false,
+        orders: [],
+        selectedOrder: {},
+        alertType: "success",
+        showAlert: false,
+        alertMessage: "",
+        selectedUpdateStatus: "Dispatched",
+        buttonDisabled: false
+      },
+      created: async function () {
+        this.loadingOrders = true;
+        const orders_request = await axios.get(`${api_url}/orders`);
+
+        console.log(orders_request);
+
+        this.orders = orders_request.data;
+        this.selectedOrder = this.orders[0];
+        this.loadingOrders = false;
+      },
+      computed: {
+        newOrders: function () {
+          return this.orders.filter((order) => order.status === "New").length;
+        },
+        dispatched: function () {
+          return this.orders.filter((order) => order.status === "Dispatched")
+            .length;
+        },
+        delivered: function () {
+          return this.orders.filter((order) => order.status === "Delivered")
+            .length;
+        }
+      },
+      methods: {
+        selectOrder(order) {
+          this.selectedOrder = order;
+        },
+        displayNotification(message, type) {
+          this.alertType = type == "error" ? "danger" : "success";
+
+          this.showAlert = true;
+          this.alertMessage = message;
+
+          setTimeout(() => {
+            this.showAlert = false;
+            this.alertMessage = "";
+          }, 5000);
+        },
+        async getOrders() {
+          this.loadingOrders = true;
+          const orders_request = await axios.get(`${api_url}/orders`);
+
+          this.orders = orders_request.data;
+
+          const getSelectedOrderUpdate = this.orders.filter(
+            (order) => order.order_id == this.selectedOrder.order_id
+          );
+
+          this.selectedOrder = getSelectedOrderUpdate[0];
+          this.loadingOrders = false;
+        },
+        async updateCustomerOrder() {
+          this.buttonDisabled = true;
+
+          const data = {
+            order_id: this.selectedOrder.order_id,
+            status: this.selectedUpdateStatus
+          };
+
+          try {
+            const update_response = await axios.post(
+              `${api_url}/updateorder`,
+              data
+            );
+
+            this.displayNotification(update_response.data.message, "success");
+
+            this.buttonDisabled = false;
+
+            this.getOrders();
+          } catch (error) {
+            tthis.buttonDisabled = false;
+            console.log(error);
+            this.displayNotification(
+              "Something went wrong. Please try again later",
+              "error"
+            );
+          }
+        }
+      }
+    });
   </script>
 </html>
