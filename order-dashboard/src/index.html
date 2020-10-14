@@ -12,13 +12,19 @@
     <link rel="stylesheet" href="index.css" />
 
     <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"
+      integrity="sha512-qTXRIMyZIFb8iQcfjXWCO8+M5Tbc38Qi5WzdPOYZHIlZpzBHG3L3by84BBBOiRGiEb7KKtAOAs5qYdUiZiQNNQ=="
+      crossorigin="anonymous"
+    ></script>
   </head>
   <body>
     <div class="container">
       <div class="row">
         <div class="col-md-4">
           <!-- Orders Summary -->
-          <ul class="list-group">
+          <ul class="list-group mt-5">
             <li
               class="list-group-item d-flex justify-content-between align-items-center"
             >
@@ -29,18 +35,18 @@
               class="list-group-item d-flex justify-content-between align-items-center"
             >
               Dispatched
-              <span class="badge badge-primary badge-pill">2</span>
+              <span class="badge badge-warning badge-pill">2</span>
             </li>
             <li
               class="list-group-item d-flex justify-content-between align-items-center"
             >
               Delivered
-              <span class="badge badge-primary badge-pill">1</span>
+              <span class="badge badge-success badge-pill">1</span>
             </li>
           </ul>
 
           <!-- Orders List -->
-          <div class="list-group">
+          <div class="list-group mt-5">
             <a href="#" class="list-group-item list-group-item-action active">
               <div class="d-flex w-100 justify-content-between">
                 <h5 class="mb-1">Order #4235</h5>
@@ -76,7 +82,37 @@
             </a>
           </div>
         </div>
-        <div class="col-md-8">Order</div>
+        <div class="col-md-8">
+          <div class="jumbotron mt-5">
+            <h1 class="display-4">Order #4235</h1>
+            <p class="lead">
+              This is a simple hero unit, a simple jumbotron-style component for
+              calling extra attention to featured content or information.
+            </p>
+            <hr class="my-2" />
+            <p>Current Status: <span class="text-primary">New</span></p>
+          </div>
+
+          <form class="mt-5">
+            <div class="form-group">
+              <div class="form-group">
+                <label for="exampleFormControlSelect1"
+                  >Update Order Status</label
+                >
+                <select class="form-control" id="exampleFormControlSelect1">
+                  <option>Dispatched</option>
+                  <option>Delivered</option>
+                </select>
+              </div>
+
+              <small id="emailHelp" class="form-text text-muted"
+                >Logged-in Admin is responsible for update made</small
+              >
+            </div>
+
+            <button type="submit" class="btn btn-primary">Submit</button>
+          </form>
+        </div>
       </div>
     </div>
   </body>
